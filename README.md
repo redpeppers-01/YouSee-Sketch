@@ -52,12 +52,13 @@
    - Click and drag on the image to apply color
 
 3. **Save Your Work**
-   - Click the **Save** button to upload your colored image to the server and download it locally
+   - Click the **Save** button to download your colored image locally
+   - Your work is also automatically saved in your browser's local storage
 
 4. **Share Your Creation**
-   - Click the **Share** button to upload your image to the server
-   - If your browser supports the Web Share API, a share dialog will appear
-   - If the Web Share API is not supported, a notification will notify you that the image has been saved
+   - Click the **Share** button to upload your colored image to the server
+   - Your creation will be saved in the gallery
+   - You can find shared images in the gallery section below
 
 5. **View Saved Images**
    - Scroll down to the **Saved Images** section to view all saved creations as thumbnails

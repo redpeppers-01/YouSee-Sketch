@@ -15,6 +15,7 @@ customElements.define('jl-coloringbook', class extends HTMLElement
         jQuery(this).css('display','block');
         //default colors
         this.paletteColors=[
+                'rgba(0, 0, 0, 0.8)',    // Add black as first color
                 'rgba(87, 87, 87,0.8)',
                 'rgba(220, 35, 35,0.8)',
                 'rgba(42, 75, 215,0.8)',
@@ -422,36 +423,13 @@ customElements.define('jl-coloringbook', class extends HTMLElement
             // Get the image data as a Data URL
             let dataUrl = await this.getImageData();
 
-            // Convert Data URL to Blob
-            let response = await fetch(dataUrl);
-            let blob = await response.blob();
-
-            // Create FormData and append the image file
-            let formData = new FormData();
-            formData.append('image', blob, 'ColoringBook.png');
-
-            // Send the image to the server
-            let serverUrl = '/upload-image';
-            let uploadResponse = await fetch(serverUrl, {
-                method: 'POST',
-                body: formData
-            });
-
-            let result = await uploadResponse.json();
-
-            if (uploadResponse.ok && result.status === 'success') {
-                console.log('Image saved on server:', result.filename);
-                // Download the file locally
-                let downloadLink = jQuery(`<a download="ColoringBook.png">Download</a>`).attr('href', dataUrl).appendTo(this.wrapper);
-                downloadLink[0].click();
-                downloadLink.remove();
-                
-                // Show notification instead of alert
-                $(document).trigger('showNotification', ['Image saved to your device']);
-            } else {
-                console.error('Server error:', result.message);
-                $(document).trigger('showNotification', ['Failed to save image: ' + result.message]);
-            }
+            // Download the file locally
+            let downloadLink = jQuery(`<a download="ColoringBook.png">Download</a>`).attr('href', dataUrl).appendTo(this.wrapper);
+            downloadLink[0].click();
+            downloadLink.remove();
+            
+            // Show notification
+            $(document).trigger('showNotification', ['Image saved to your device']);
 
         } catch (error) {
             console.error('Error saving image:', error);
@@ -468,21 +446,18 @@ customElements.define('jl-coloringbook', class extends HTMLElement
         
         this.isSharing = true;
         const shareButton = jQuery(`.shareButton`, this.shadowRoot);
-        shareButton.prop('disabled', true); // Disable the button
+        shareButton.prop('disabled', true);
 
         try {
-            // Step 1: Get image data
+            // Get image data and upload to server
             let dataUrl = await this.getImageData();
-            // Step 2: Convert Data URL to Blob
             let response = await fetch(dataUrl);
             let blob = await response.blob();
-            // Step 3: Create FormData and append the image file
             let formData = new FormData();
             formData.append('image', blob, 'ColoringBook.png');
 
-            // Step 4: Send the image to the server
-            let serverUrl = '/upload-image';
-            let uploadResponse = await fetch(serverUrl, {
+            // Send to server
+            let uploadResponse = await fetch('/upload-image', {
                 method: 'POST',
                 body: formData
             });
@@ -490,20 +465,17 @@ customElements.define('jl-coloringbook', class extends HTMLElement
             let result = await uploadResponse.json();
 
             if (uploadResponse.ok && result.status === 'success') {
-                console.log('Image saved on server:', result.filename);
-                // Trigger custom events for refreshing saved images and showing notification
                 $(document).trigger('refreshSavedImages');
-                $(document).trigger('showNotification', ['Thanks for sharing your masterpiece!']);
+                $(document).trigger('showNotification', ['Added to gallery!']);
             } else {
                 console.error('Server error:', result.message);
-                $(document).trigger('showNotification', ['Failed to share image on the server: ' + result.message]);
+                $(document).trigger('showNotification', ['Failed to share image: ' + result.message]);
             }
 
         } catch (error) {
             console.error('Error sharing:', error);
             $(document).trigger('showNotification', ['An error occurred while sharing the image.']);
         } finally {
-            // Re-enable sharing after completion (success or failure)
             this.isSharing = false;
             shareButton.prop('disabled', false);
         }

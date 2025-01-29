@@ -64,6 +64,15 @@
         // Update the year in the footer
         $('#current-year').text(new Date().getFullYear());
 
+        // Function to show notification
+        function showNotification(message) {
+            var notification = $('#notification');
+            notification.text(message).fadeIn();
+            setTimeout(function() {
+                notification.fadeOut();
+            }, 3000);
+        }
+
         // Function to load saved images for a specific page
         function loadSavedImages(page) {
             $.ajax({
@@ -115,15 +124,6 @@
             loadSavedImages(page);
             history.pushState({ page: page }, '', '?page=' + page);
         });
-
-        // Function to show notification
-        function showNotification(message) {
-            var notification = $('#notification');
-            notification.text(message).fadeIn();
-            setTimeout(function() {
-                notification.fadeOut();
-            }, 3000);
-        }
 
         // Listen for custom event to refresh saved images
         $(document).on('refreshSavedImages', function() {
