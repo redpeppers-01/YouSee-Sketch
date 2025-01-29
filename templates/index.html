@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' https://fonts.gstatic.com https://code.jquery.com;
+        img-src 'self' data: blob: https://fonts.gstatic.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        script-src 'self' 'unsafe-inline' https://code.jquery.com;
+        connect-src 'self' blob: data:;
+        font-src 'self' https://fonts.gstatic.com;
+    ">
+    <title>YouSee-Sketch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/jl-coloringBook.js') }}"></script>
+</head>
+<body>
+    <header>
+        <h1>YouSee Sketch</h1>
+    </header>
+    <main>
+        <section id="coloring-book-container">
+            <h2>Pick a Page to Color</h2>
+            <jl-coloringbook>
+                {% for image in images %}
+                <img src="{{ url_for('serve_image', filename=image) }}" data-lazy-src="{{ url_for('serve_image', filename=image) }}" />
+                {% endfor %}
+            </jl-coloringbook>
+        </section>
+
+        <!-- Optional: Display Saved Images -->
+        <section id="saved-images-container">
+            <h2>Saved Images</h2>
+            <div class="saved-images">
+                {% for image in saved_images %}
+                <img src="{{ url_for('serve_saved_image', filename=image) }}" alt="Saved Coloring Book Image" />
+                {% endfor %}
+            </div>
+            <!-- Pagination Controls -->
+            <div class="pagination">
+                {% if page > 1 %}
+                <a href="#" data-page="{{ page-1 }}">&laquo; Previous</a>
+                {% endif %}
+                {% for p in range(1, total_pages + 1) %}
+                <a href="#" data-page="{{ p }}" class="{{ 'active' if p == page else '' }}">{{ p }}</a>
+                {% endfor %}
+                {% if page < total_pages %}
+                <a href="#" data-page="{{ page+1 }}">Next &raquo;</a>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p><span id="current-year"></span> YouSee-Sketch</p>
+    </footer>
+
+    <!-- Notification Area -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+    $(document).ready(function() {
+        // Update the year in the footer
+        $('#current-year').text(new Date().getFullYear());
+
+        // Function to load saved images for a specific page
+        function loadSavedImages(page) {
+            $.ajax({
+                url: '{{ url_for("saved_images") }}',
+                data: { page: page },
+                success: function(data) {
+                    var savedImagesContainer = $('.saved-images');
+                    savedImagesContainer.empty();
+                    $.each(data.saved_images, function(index, image) {
+                        savedImagesContainer.append('<img src="{{ url_for("serve_saved_image", filename="") }}' + image + '" alt="Saved Coloring Book Image" />');
+                    });
+
+                    var paginationContainer = $('.pagination');
+                    paginationContainer.empty();
+                    if (data.page > 1) {
+                        paginationContainer.append('<a href="#" data-page="' + (data.page - 1) + '">&laquo; Previous</a>');
+                    }
+                    for (var p = 1; p <= data.total_pages; p++) {
+                        paginationContainer.append('<a href="#" data-page="' + p + '" class="' + (p == data.page ? 'active' : '') + '">' + p + '</a>');
+                    }
+                    if (data.page < data.total_pages) {
+                        paginationContainer.append('<a href="#" data-page="' + (data.page + 1) + '">Next &raquo;</a>');
+                    }
+
+                    // Re-bind click event for pagination links
+                    $('.pagination a').on('click', function(e) {
+                        e.preventDefault();
+                        var page = $(this).data('page');
+                        loadSavedImages(page);
+                        history.pushState({ page: page }, '', '?page=' + page);
+                    });
+                }
+            });
+        }
+
+        // Handle browser back/forward buttons
+        window.onpopstate = function(event) {
+            if (event.state && event.state.page) {
+                loadSavedImages(event.state.page);
+            } else {
+                loadSavedImages(1);
+            }
+        };
+
+        // Bind click event for pagination links
+        $('.pagination a').on('click', function(e) {
+            e.preventDefault();
+            var page = $(this).data('page');
+            loadSavedImages(page);
+            history.pushState({ page: page }, '', '?page=' + page);
+        });
+
+        // Function to show notification
+        function showNotification(message) {
+            var notification = $('#notification');
+            notification.text(message).fadeIn();
+            setTimeout(function() {
+                notification.fadeOut();
+            }, 3000);
+        }
+
+        // Listen for custom event to refresh saved images
+        $(document).on('refreshSavedImages', function() {
+            loadSavedImages(1); // Refresh to the first page
+        });
+
+        // Listen for custom event to show notification
+        $(document).on('showNotification', function(event, message) {
+            showNotification(message);
+        });
+    });
+    </script>
+</body>
+</html>
+
